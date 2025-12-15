@@ -2,98 +2,126 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<!-- 모바일 줌 방지, 노치 대응, 뷰포트 고정 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>SSAFY Code Stacker</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet"><style>
-/* ... 기존 스타일 유지 ... */
-body {
-font-family: 'Jua', sans-serif;
-overflow: hidden;
-background: linear-gradient(135deg, #00b3ff, #7e77ff);
-}
-canvas {
-background-color: rgba(255, 255, 255, 0.5);
-border-radius: 1rem;
-box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-}
-.perfect-popup {
-animation: popup 0.6s ease-out forwards;
-}
-@keyframes popup {
-0% { transform: translateY(0) scale(0.8); opacity: 1; }
-100% { transform: translateY(-60px) scale(1.2); opacity: 0; }
-}
-.game-container {
-touch-action: manipulation;
-}
-#leaderboard div::-webkit-scrollbar { width: 8px; }
-#leaderboard div::-webkit-scrollbar-track { background: rgba(255,255,255,0.3); border-radius: 10px; }
-#leaderboard div::-webkit-scrollbar-thumb { background: #8781f3; border-radius: 10px; }
-#leaderboard div::-webkit-scrollbar-thumb:hover { background: #906ae9; }
-#nicknameInputGameOver.border-red-500::placeholder { color: #5244ef; }
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+    /* 기본 폰트 및 배경 설정 */
+    body {
+        font-family: 'Jua', sans-serif;
+        overflow: hidden; /* 스크롤 완전 차단 */
+        background: linear-gradient(135deg, #00b3ff, #7e77ff);
+        touch-action: none; /* 브라우저 기본 터치 동작(스크롤, 줌) 차단 */
+        user-select: none; /* 텍스트 선택 방지 */
+        -webkit-user-select: none;
+        -webkit-tap-highlight-color: transparent; /* 터치 시 파란 박스 제거 */
+    }
+
+    /* 모바일 브라우저 주소창 대응 높이 설정 */
+    #app-container {
+        height: 100vh; /* fallback */
+        height: 100dvh; /* dynamic viewport height */
+    }
+
+    canvas {
+        background-color: rgba(255, 255, 255, 0.5);
+        border-radius: 1rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        touch-action: none;
+    }
+
+    .perfect-popup {
+        animation: popup 0.6s ease-out forwards;
+    }
+
+    @keyframes popup {
+        0% { transform: translateY(0) scale(0.8); opacity: 1; }
+        100% { transform: translateY(-60px) scale(1.2); opacity: 0; }
+    }
+
+    /* 스크롤바 커스텀 */
+    #leaderboard div::-webkit-scrollbar { width: 4px; }
+    #leaderboard div::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); border-radius: 10px; }
+    #leaderboard div::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.5); border-radius: 10px; }
+    
+    #nicknameInputGameOver.border-red-500::placeholder { color: #ef4444; }
 </style>
 </head>
 <body class="text-gray-800 antialiased">
 
-<div id="app-container" class="w-screen h-screen flex flex-col lg:flex-row items-center justify-center p-4 gap-6">
-<div class="game-container flex flex-col items-center justify-center gap-4 w-full max-w-sm lg:max-w-md">
-<div class="w-full flex justify-between items-center px-2">
-<div class="text-left">
-<h1 class="text-3xl font-extrabold text-white" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">SSAFY stacker</h1>
-<p class="text-white text-opacity-90 text-sm">스타티, 알지, 핏, 와이즈를 높이 쌓아보자 (ง •̀_•́)ง </p>
-</div>
-<div class="text-right bg-white/70 p-3 rounded-lg shadow-inner">
-<div class="text-2xl font-bold text-blue-600">
-<span id="score">0</span> <span class="text-lg">층</span>
-</div>
-<div id="combo-display" class="text-sm text-blue-600 font-bold h-5"></div>
-</div>
+<div id="app-container" class="w-full flex flex-col lg:flex-row items-center justify-center p-4 gap-4 lg:gap-6 box-border">
+    <!-- 게임 영역 -->
+    <div class="game-container flex flex-col items-center justify-center gap-2 w-full max-w-sm lg:max-w-md h-full lg:h-auto max-h-[80dvh] lg:max-h-none">
+        <!-- 헤더 (타이틀 & 점수) -->
+        <div class="w-full flex justify-between items-end px-2 shrink-0">
+            <div class="text-left">
+                <h1 class="text-2xl lg:text-3xl font-extrabold text-white drop-shadow-md">SSAFY Stacker</h1>
+                <p class="text-white text-opacity-90 text-xs lg:text-sm">싸피 친구들을 높이 쌓아보자!</p>
+            </div>
+            <div class="text-right bg-white/80 backdrop-blur-sm p-2 rounded-lg shadow-sm min-w-[80px]">
+                <div class="text-xl lg:text-2xl font-bold text-blue-600 leading-none">
+                    <span id="score">0</span> <span class="text-sm">층</span>
+                </div>
+                <div id="combo-display" class="text-xs text-blue-600 font-bold h-4 leading-none mt-1"></div>
+            </div>
+        </div>
+
+        <!-- 캔버스 영역 (반응형 비율 유지) -->
+        <div class="relative w-full flex-grow lg:aspect-[4/5] lg:flex-grow-0 min-h-0">
+            <canvas id="gameCanvas" class="w-full h-full block"></canvas>
+            
+            <!-- 팝업 효과 컨테이너 -->
+            <div id="popup-container" class="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden"></div>
+            
+            <!-- 게임 오버 스크린 -->
+            <div id="gameOverScreen" class="hidden absolute inset-0 bg-black/60 backdrop-blur-sm flex-col items-center justify-center text-center rounded-2xl p-6 z-10">
+                <h2 class="text-4xl font-extrabold text-red-500 mb-2 drop-shadow-lg animate-bounce">GAME OVER</h2>
+                <p class="text-xl text-white mb-6">최종 기록: <span id="finalScore" class="font-bold text-yellow-300 text-3xl">0</span> 층</p>
+                
+                <div id="gameOverNicknamePrompt" class="hidden w-full max-w-xs bg-white/10 p-4 rounded-xl mb-4">
+                    <p class="text-white text-sm mb-2">랭킹에 이름을 남겨보세요!</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="nicknameInputGameOver" class="flex-1 p-2 bg-white/90 border-2 border-transparent rounded-lg text-center text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="닉네임 (10자)" maxlength="10">
+                        <button id="saveNicknameBtnGameOver" class="bg-blue-500 text-white px-3 py-2 rounded-lg font-bold text-sm hover:bg-blue-600 shadow-lg whitespace-nowrap">저장</button>
+                    </div>
+                </div>
+
+                <p id="restartText" class="text-base text-white/80 animate-pulse mt-2 touch-manipulation">화면을 터치하여 다시 시작</p>
+            </div>
+        </div>
+
+        <!-- 하단 닉네임 표시 -->
+        <div class="text-center text-white/90 w-full flex items-center justify-center gap-2 shrink-0 h-8">
+            <span class="text-sm">플레이어:</span>
+            <span id="userNicknameDisplay" class="font-bold bg-black/20 px-3 py-1 rounded-full text-sm min-w-[60px]">...</span>
+            <button id="editNicknameBtn" class="bg-white/20 p-1.5 rounded-full hover:bg-white/40 transition active:scale-95">✏️</button>
+        </div>
+    </div>
+
+    <!-- 랭킹 보드 (모바일에서는 작게, 데스크탑에서는 옆으로) -->
+    <div id="leaderboard" class="w-full max-w-sm lg:max-w-xs h-32 lg:h-full flex flex-col bg-white/40 backdrop-blur-md p-3 rounded-xl shadow-lg border border-white/30 shrink-0">
+        <h2 class="text-lg lg:text-xl font-extrabold text-white mb-2 text-center drop-shadow-sm">🏆 실시간 랭킹</h2>
+        <div id="leaderboard-list" class="flex-grow overflow-y-auto pr-1 space-y-1">
+            <p class="text-white/70 text-center text-sm">로딩 중...</p>
+        </div>
+    </div>
 </div>
 
-<div class="relative w-full aspect-[4/5]">
-<canvas id="gameCanvas" class="w-full h-full"></canvas>
-<div id="popup-container" class="absolute inset-0 flex items-center justify-center pointer-events-none"></div>
-<div id="gameOverScreen" class="hidden absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex-col items-center justify-center text-center rounded-2xl p-4">
-<h2 class="text-4xl font-extrabold text-red-500 mb-2" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">GAME OVER</h2>
-<p class="text-xl text-white mb-4">최종 기록: <span id="finalScore" class="font-bold text-amber-300">0</span> 층</p>
-<div id="gameOverNicknamePrompt" class="hidden my-4 w-full max-w-xs">
-<p class="text-white text-sm mb-2">랭킹에 표시할 닉네임을 정해주세요!</p>
-<div class="flex gap-2">
-<input type="text" id="nicknameInputGameOver" class="w-full p-2 border-2 border-transparent rounded-lg text-center text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="닉네임 (10자 이내)" maxlength="10">
-<button id="saveNicknameBtnGameOver" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-600 transition">저장</button>
+<!-- 닉네임 변경 모달 -->
+<div id="nicknameModal" class="hidden absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-white p-6 rounded-2xl shadow-2xl text-center w-full max-w-xs transform transition-all scale-95 opacity-0">
+        <h3 class="text-xl font-bold mb-4 text-gray-800">닉네임 변경</h3>
+        <input type="text" id="nicknameInput" class="w-full p-3 bg-gray-100 border-2 border-transparent focus:border-blue-400 rounded-xl mb-4 text-center text-lg outline-none" placeholder="새 닉네임" maxlength="10">
+        <div class="flex gap-3">
+            <button id="saveNicknameBtn" class="flex-1 bg-blue-500 text-white py-3 rounded-xl font-bold text-lg shadow-md active:bg-blue-600 transition">확인</button>
+            <button id="cancelNicknameBtn" class="flex-1 bg-gray-200 text-gray-600 py-3 rounded-xl font-bold text-lg hover:bg-gray-300 transition">취소</button>
+        </div>
+    </div>
 </div>
-</div>
-
-<p id="restartText" class="text-lg text-white animate-pulse">화면을 터치해서 다시 시작!</p>
-</div>
-</div>
-<div class="text-center text-white/90 w-full flex items-center justify-center gap-2">
-<p>닉네임: <span id="userNicknameDisplay" class="font-bold bg-black/20 px-3 py-1 rounded-full">...</span></p>
-<button id="editNicknameBtn" class="bg-white/70 p-2 rounded-full text-xs leading-none hover:bg-white transition">✏️</button>
-</div>
-</div>
-
-<div id="leaderboard" class="w-full max-w-sm lg:max-w-xs h-full flex flex-col bg-white/50 backdrop-blur-sm p-4 rounded-2xl shadow-lg">
-<h2 class="text-2xl font-extrabold text-blue-600 mb-4 text-center border-b-2 border-blue-400/50 pb-2">🏆 실시간 랭킹 🏆</h2>
-<div id="leaderboard-list" class="flex-grow overflow-y-auto pr-2">
-<p class="text-gray-600">랭킹을 불러오는 중...</p>
-</div>
-</div>
-</div>
-<div id="nicknameModal" class="hidden absolute inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50">
-<div class="bg-white p-6 rounded-2xl shadow-lg text-center w-80 transform transition-all scale-95 opacity-0">
-<h3 class="text-xl font-bold mb-4">닉네임 변경</h3>
-<input type="text" id="nicknameInput" class="w-full p-2 border rounded-lg mb-4 text-center" placeholder="새 닉네임을 입력하세요 (10자 이내)" maxlength="10">
-<div class="flex gap-2">
-<button id="saveNicknameBtn" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-600 transition">저장</button>
-<button id="cancelNicknameBtn" class="w-full bg-gray-300 py-2 rounded-lg hover:bg-gray-400 transition">취소</button>
-</div>
-</div>
-</div>
-
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -106,6 +134,7 @@ let userId = null;
 let userNickname = null;
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-code-stacker';
+// User provided config
 const firebaseConfig = {
     apiKey: "AIzaSyCA88k77fUZoDodoswX30cChwMtVtE1k1A",
     authDomain: "ssafy-stacker.firebaseapp.com",
@@ -114,8 +143,10 @@ const firebaseConfig = {
     messagingSenderId: "786452432268",
     appId: "1:786452432268:web:46df073c69ecf3cab382a9",
     measurementId: "G-EM6VY17XXH"
-  };
+};
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+// UI References
 const userNicknameDisplay = document.getElementById('userNicknameDisplay');
 const nicknameModal = document.getElementById('nicknameModal');
 const nicknameModalContent = nicknameModal.querySelector('div');
@@ -123,227 +154,258 @@ const editNicknameBtn = document.getElementById('editNicknameBtn');
 const saveNicknameBtn = document.getElementById('saveNicknameBtn');
 const cancelNicknameBtn = document.getElementById('cancelNicknameBtn');
 const nicknameInput = document.getElementById('nicknameInput');
-// Game Over Nickname Prompt elements
 const gameOverNicknamePrompt = document.getElementById('gameOverNicknamePrompt');
 const nicknameInputGameOver = document.getElementById('nicknameInputGameOver');
 const saveNicknameBtnGameOver = document.getElementById('saveNicknameBtnGameOver');
 
+// --- Helper Functions ---
 function updateNicknameDisplay() {
-userNicknameDisplay.textContent = userNickname || '게스트';
+    userNicknameDisplay.textContent = userNickname || '게스트';
 }
 
 function openNicknameModal() {
-nicknameInput.value = userNickname || '';
-nicknameModal.classList.remove('hidden');
-nicknameModal.classList.add('flex');
-setTimeout(() => nicknameModalContent.classList.remove('scale-95', 'opacity-0'), 10);
+    nicknameInput.value = userNickname || '';
+    nicknameModal.classList.remove('hidden');
+    nicknameModal.classList.add('flex');
+    // Animation frame for transition
+    requestAnimationFrame(() => {
+        nicknameModalContent.classList.remove('scale-95', 'opacity-0');
+        nicknameModalContent.classList.add('scale-100', 'opacity-100');
+    });
 }
 
 function closeNicknameModal() {
-nicknameModalContent.classList.add('scale-95', 'opacity-0');
-setTimeout(() => nicknameModal.classList.add('hidden'), 200);
+    nicknameModalContent.classList.remove('scale-100', 'opacity-100');
+    nicknameModalContent.classList.add('scale-95', 'opacity-0');
+    setTimeout(() => {
+        nicknameModal.classList.add('hidden');
+        nicknameModal.classList.remove('flex');
+    }, 200);
 }
 
 function handleNicknameSave(newNickname) {
-if (newNickname && newNickname.length > 0) {
-userNickname = newNickname;
-localStorage.setItem(`stackerNickname_${userId}`, userNickname);
-updateNicknameDisplay();
-updateNicknameInFirestore();
-return true;
-}
-return false;
+    if (newNickname && newNickname.trim().length > 0) {
+        userNickname = newNickname.trim();
+        localStorage.setItem(`stackerNickname_${userId}`, userNickname);
+        updateNicknameDisplay();
+        updateNicknameInFirestore();
+        return true;
+    }
+    return false;
 }
 
-editNicknameBtn.addEventListener('click', openNicknameModal);
+// Event Listeners for UI
+editNicknameBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); // Prevent game input
+    openNicknameModal();
+});
 cancelNicknameBtn.addEventListener('click', closeNicknameModal);
 saveNicknameBtn.addEventListener('click', () => {
-const newNickname = nicknameInput.value.trim();
-if (handleNicknameSave(newNickname)) {
-closeNicknameModal();
-} else {
-alert('닉네임은 비워둘 수 없어요!');
-}
+    if (handleNicknameSave(nicknameInput.value)) {
+        closeNicknameModal();
+    } else {
+        alert('닉네임을 입력해주세요!');
+    }
 });
 
+// Game Over Input Handling
 saveNicknameBtnGameOver.addEventListener('click', (e) => {
-e.stopPropagation();
-const newNickname = nicknameInputGameOver.value.trim();
-if (handleNicknameSave(newNickname)) {
-gameOverNicknamePrompt.classList.add('hidden');
-} else {
-nicknameInputGameOver.value = '';
-nicknameInputGameOver.placeholder = "다시 입력!";
-nicknameInputGameOver.classList.add('border-red-600');
-}
+    e.stopPropagation(); // Prevent restart
+    e.preventDefault();
+    const newNickname = nicknameInputGameOver.value;
+    if (handleNicknameSave(newNickname)) {
+        gameOverNicknamePrompt.classList.add('hidden');
+        // Optionally show toast or update rank immediately visually
+    } else {
+        nicknameInputGameOver.classList.add('border-red-500');
+        nicknameInputGameOver.focus();
+    }
 });
-nicknameInputGameOver.addEventListener('click', e => e.stopPropagation());
-nicknameInputGameOver.addEventListener('keydown', e => e.stopPropagation());
+nicknameInputGameOver.addEventListener('touchstart', (e) => e.stopPropagation());
+nicknameInputGameOver.addEventListener('mousedown', (e) => e.stopPropagation());
 
+// Firebase Initialization
 if (firebaseConfig) {
-try {
-const app = initializeApp(firebaseConfig);
-db = getFirestore(app);
-auth = getAuth(app);
-onAuthStateChanged(auth, (user) => {
-if (user) {
-userId = user.uid;
-userNickname = localStorage.getItem(`stackerNickname_${userId}`) || `게이머${userId.substring(0, 4)}`;
-updateNicknameDisplay();
-listenToLeaderboard();
-}
-});
+    try {
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                userId = user.uid;
+                const cachedName = localStorage.getItem(`stackerNickname_${userId}`);
+                userNickname = cachedName || `게이머${userId.substring(0, 4)}`;
+                updateNicknameDisplay();
+                listenToLeaderboard();
+            }
+        });
 
-if (initialAuthToken) {
-signInWithCustomToken(auth, initialAuthToken);
+        if (initialAuthToken) {
+            signInWithCustomToken(auth, initialAuthToken);
+        } else {
+            signInAnonymously(auth);
+        }
+    } catch (e) {
+        console.error("Firebase Init Error:", e);
+        userNicknameDisplay.textContent = "오프라인";
+    }
 } else {
-signInAnonymously(auth);
-}
-} catch (e) {
-console.error("Firebase initialization failed:", e);
-userNicknameDisplay.textContent = "연결 실패";
-}
-} else {
-userId = localStorage.getItem('stackerUserId');
-if (!userId) {
-userId = 'local-' + Math.random().toString(36).substr(2, 9);
-localStorage.setItem('stackerUserId', userId);
-}
-userNickname = localStorage.getItem(`stackerNickname_${userId}`) || '로컬 유저';
-updateNicknameDisplay();
-// document.getElementById('leaderboard').style.display = 'none';
-    document.getElementById('leaderboard-list').innerHTML = '<p class="text-sm text-gray-600 p-2">서버 연결 대기 중...<br>(로컬 모드)</p>';
+    // Local fallback
+    userId = localStorage.getItem('stackerUserId') || `local-${Math.random().toString(36).substr(2,9)}`;
+    localStorage.setItem('stackerUserId', userId);
+    userNickname = localStorage.getItem(`stackerNickname_${userId}`) || '로컬 유저';
+    updateNicknameDisplay();
+    document.getElementById('leaderboard-list').innerHTML = '<p class="text-white/70 text-center text-sm p-2">서버 미연결 (로컬 모드)</p>';
 }
 
+// Firestore Operations
 async function updateNicknameInFirestore() {
-if (!db || !userId) return;
-try {
-const userDocRef = doc(db, `artifacts/${appId}/public/data/stacker_leaderboard`, userId);
-await setDoc(userDocRef, { nickname: userNickname }, { merge: true });
-} catch (error) {
-console.error("Error updating nickname:", error);
-}
+    if (!db || !userId) return;
+    try {
+        const userDocRef = doc(db, `artifacts/${appId}/public/data/stacker_leaderboard`, userId);
+        await setDoc(userDocRef, { nickname: userNickname }, { merge: true });
+    } catch (e) { console.error(e); }
 }
 
 async function saveScore(newScore) {
-if (!db || !userId) return;
-try {
-const userDocRef = doc(db, `artifacts/${appId}/public/data/stacker_leaderboard`, userId);
-const userDoc = await getDoc(userDocRef);
-const currentData = userDoc.exists() ? userDoc.data() : { score: 0 };
+    if (!db || !userId) return;
+    try {
+        const userDocRef = doc(db, `artifacts/${appId}/public/data/stacker_leaderboard`, userId);
+        const userDoc = await getDoc(userDocRef);
+        const currentData = userDoc.exists() ? userDoc.data() : { score: 0 };
 
-if (newScore > currentData.score) {
-await setDoc(userDocRef, {
-userId: userId,
-nickname: userNickname,
-score: newScore,
-timestamp: new Date()
-}, { merge: true });
-} else if (!currentData.nickname || currentData.nickname !== userNickname) {
-await setDoc(userDocRef, { nickname: userNickname }, { merge: true });
-}
-} catch (error) {
-console.error("Error saving score: ", error);
-}
+        if (newScore > currentData.score) {
+            await setDoc(userDocRef, {
+                userId: userId,
+                nickname: userNickname,
+                score: newScore,
+                timestamp: new Date()
+            }, { merge: true });
+        } else if (!currentData.nickname || currentData.nickname !== userNickname) {
+            await setDoc(userDocRef, { nickname: userNickname }, { merge: true });
+        }
+    } catch (e) { console.error(e); }
 }
 
 function listenToLeaderboard() {
-if (!db) return;
-const leaderboardRef = collection(db, `artifacts/${appId}/public/data/stacker_leaderboard`);
-const q = query(leaderboardRef, orderBy("score", "desc"), limit(50));
-onSnapshot(q, (snapshot) => {
-const leaderboardList = document.getElementById('leaderboard-list');
-leaderboardList.innerHTML = '';
+    if (!db) return;
+    const leaderboardRef = collection(db, `artifacts/${appId}/public/data/stacker_leaderboard`);
+    const q = query(leaderboardRef, orderBy("score", "desc"), limit(50));
+    
+    onSnapshot(q, (snapshot) => {
+        const list = document.getElementById('leaderboard-list');
+        list.innerHTML = '';
+        if (snapshot.empty) {
+            list.innerHTML = '<p class="text-white/70 text-center text-sm p-2">랭킹 데이터 없음</p>';
+            return;
+        }
+        
+        snapshot.docs.forEach((doc, index) => {
+            const data = doc.data();
+            const rank = index + 1;
+            const isMe = data.userId === userId;
+            const name = data.nickname || `유저${data.userId?.substr(0,4)}`;
+            
+            const div = document.createElement('div');
+            div.className = `flex items-center justify-between p-2 rounded-lg text-sm ${isMe ? 'bg-blue-500 text-white font-bold shadow-md' : 'bg-white/50 text-gray-800'}`;
+            
+            let rankIcon = `#${rank}`;
+            if (rank === 1) rankIcon = '🥇';
+            if (rank === 2) rankIcon = '🥈';
+            if (rank === 3) rankIcon = '🥉';
 
-if (snapshot.empty) {
-leaderboardList.innerHTML = '<p class="text-gray-600">아직 랭킹이 없어요! 1등에 도전하세요!</p>';
-return;
-}
-snapshot.docs.forEach((doc, index) => {
-const data = doc.data();
-const rank = index + 1;
-const isCurrentUser = data.userId === userId;
-const displayName = data.nickname || `게이머${data.userId.substring(0,4)}`;
-
-const entry = document.createElement('div');
-entry.className = `flex items-center justify-between p-2 my-1 rounded-lg transition-all ${isCurrentUser ? 'bg-blue-400 text-white scale-105 shadow-md' : 'bg-white/70'}`;
-let rankDisplay;
-if (rank === 1) rankDisplay = '🥇';
-else if (rank === 2) rankDisplay = '🥈';
-else if (rank === 3) rankDisplay = '🥉';
-else rankDisplay = `#${rank}`;
-
-entry.innerHTML = `
-<div class="flex items-center gap-3">
-<span class="font-bold w-8 text-center text-lg">${rankDisplay}</span>
-<span class="truncate font-bold text-sm" title="${displayName}">${displayName}</span>
-</div>
-<span class="font-bold text-gray-700">${data.score} 층</span>
-`;
-leaderboardList.appendChild(entry);
-});
-}, (error) => {
-console.error("Error listening to leaderboard: ", error);
-document.getElementById('leaderboard-list').innerHTML = '<p class="text-red-600">랭킹을 불러오는데 실패했어요.</p>';
-});
+            div.innerHTML = `
+                <div class="flex items-center gap-2 overflow-hidden">
+                    <span class="w-6 text-center shrink-0">${rankIcon}</span>
+                    <span class="truncate">${name}</span>
+                </div>
+                <span class="font-mono font-bold shrink-0 ml-2">${data.score}</span>
+            `;
+            list.appendChild(div);
+        });
+    });
 }
 
 // --- Game Logic ---
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const scoreElement = document.getElementById('score');
-const comboDisplay = document.getElementById('combo-display');
+const scoreEl = document.getElementById('score');
+const comboEl = document.getElementById('combo-display');
 const gameOverScreen = document.getElementById('gameOverScreen');
-const finalScore = document.getElementById('finalScore');
+const finalScoreEl = document.getElementById('finalScore');
 const popupContainer = document.getElementById('popup-container');
 
-function createPopup(text, color) {
-const popup = document.createElement('div');
-popup.textContent = text;
-popup.className = 'perfect-popup text-4xl font-extrabold';
-popup.style.color = color;
-popup.style.textShadow = '2px 2px 4px rgba(0,0,0,0.2)';
-popupContainer.appendChild(popup);
-setTimeout(() => {
-if (popup.parentNode) {
-popup.parentNode.removeChild(popup);
-}
-}, 600);
-}
+// Game Constants (Dynamic)
+let BLOCK_HEIGHT;
+let PERFECT_TOLERANCE;
+const rainbowColors = ['#ffadad','#ffd6a5','#fdffb6','#caffbf','#9bf6ff','#a0c4ff','#bdb2ff'];
+const TOTAL_CHARACTERS = 56;
 
-const BLOCK_HEIGHT = 120;
-const PERFECT_TOLERANCE = 15;
+// Game State
+let blocks = [];
+let currentBlock = null;
+let gameState = 'waiting'; // waiting, playing, dropping, gameOver
+let score = 0;
+let combo = 0;
+let blockSpeed = 1;
+let fallSpeed = 15;
+let animationFrameId;
 
-// --- [변경] 무지개 색상 배열 ---
-const rainbowColors = [
-    '#ffadad', // Red
-    '#ffd6a5', // Orange
-    '#fdffb6', // Yellow
-    '#caffbf', // Green
-    '#9bf6ff', // Cyan/Blue
-    '#a0c4ff', // Indigo
-    '#bdb2ff'  // Violet
-];
-
-// --- [변경] 총 캐릭터 수 설정 ---
-const TOTAL_CHARACTERS = 56; // char1.png ~ char57.png
-
-let blocks, currentBlock, gameState, score, combo, blockSpeed, fallSpeed;
-
+// Resize Canvas for High DPI
 function resizeCanvas() {
-const container = canvas.parentElement;
-canvas.width = container.clientWidth;
-canvas.height = container.clientHeight;
+    const parent = canvas.parentElement;
+    if (!parent) return;
+
+    // Device Pixel Ratio for sharp text/shapes on mobile
+    const dpr = window.devicePixelRatio || 1;
+    const rect = parent.getBoundingClientRect();
+
+    // Set internal resolution
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+
+    // Scale context to match CSS pixels logic
+    ctx.scale(dpr, dpr);
+    
+    // Set display size (optional if CSS handles it, but good for consistency)
+    canvas.style.width = `${rect.width}px`;
+    canvas.style.height = `${rect.height}px`;
+
+    // Recalculate constants based on screen size
+    // Keep reasonable size relative to screen height
+    // On small mobile (e.g. 600px height), block should be ~80px.
+    // On desktop (e.g. 800px height), block should be ~120px.
+    BLOCK_HEIGHT = Math.min(120, rect.height * 0.15); 
+    PERFECT_TOLERANCE = rect.width * 0.03; // 3% of width tolerance
+
+    // If game hasn't started, re-init to place base block correctly
+    if (gameState === 'waiting' && blocks.length > 0) {
+       init();
+    }
+}
+
+function createPopup(text, color) {
+    const p = document.createElement('div');
+    p.textContent = text;
+    p.className = 'perfect-popup text-3xl lg:text-4xl font-extrabold absolute';
+    p.style.color = color;
+    p.style.left = '50%';
+    p.style.top = '40%';
+    p.style.transform = 'translate(-50%, -50%)';
+    p.style.textShadow = '2px 2px 4px rgba(0,0,0,0.3)';
+    popupContainer.appendChild(p);
+    setTimeout(() => p.remove(), 600);
 }
 
 function drawBlock(block) {
-    // 1. 배경 블록 그리기
-    ctx.fillStyle = block.color;
-    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
-    ctx.lineWidth = 2;
-    const radius = 5;
-    const { x, y, width, height } = block;
+    const radius = 8;
+    const { x, y, width, height, color, image } = block;
 
+    ctx.fillStyle = color;
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+    ctx.lineWidth = 2;
+
+    // Rounded Rectangle Path
     ctx.beginPath();
     ctx.moveTo(x + radius, y);
     ctx.lineTo(x + width - radius, y);
@@ -358,91 +420,114 @@ function drawBlock(block) {
     ctx.fill();
     ctx.stroke();
 
-    // 2. 이미지 그리기
- if (block.image && block.image.complete && block.image.naturalWidth > 0) {
-        const padding = 2; // 여백을 조금 더 줌
-        
-        // 블록 영역 안에서 이미지가 비율을 유지하도록 계산 (fit)
-        // 블록의 가로/세로 중 더 작은 쪽을 기준으로 크기 맞춤
-        const size = Math.min(block.width, block.height) - (padding * 2);
-        
+    // Draw Character Image
+    if (image && image.complete && image.naturalWidth > 0) {
+        const padding = 4;
+        const size = Math.min(width, height) - (padding * 2);
         if (size > 0) {
-            // 이미지를 항상 블록 중앙에 그림
-            const imgX = block.x + (block.width - size) / 2;
-            const imgY = block.y + (block.height - size) / 2;
-
-            ctx.drawImage(block.image, imgX, imgY, size, size);
+            const imgX = x + (width - size) / 2;
+            const imgY = y + (height - size) / 2;
+            ctx.drawImage(image, imgX, imgY, size, size);
         }
     }
 }
 
-
-function init() {
-    gameState = 'waiting';
-    score = 0;
-    combo = 0;
-    blockSpeed = 1;
-    fallSpeed = 15; 
-    scoreElement.textContent = score;
-    comboDisplay.textContent = '';
-    gameOverScreen.classList.add('hidden');
-    gameOverScreen.classList.remove('flex');
-    gameOverNicknamePrompt.classList.add('hidden');
-
-    blocks = [];
-    const baseBlockWidth = BLOCK_HEIGHT*1.6
-    
-    // 첫 블록 (빨간색, 1번 캐릭터)
-    const baseImg = new Image();
-    baseImg.src = './assets/char18.png';
-    
-    const baseBlock = {
-        x: (canvas.width - baseBlockWidth) / 2,
-        y: canvas.height - BLOCK_HEIGHT,
-        width: baseBlockWidth,
-        height: BLOCK_HEIGHT,
-        color: rainbowColors[6], // 빨간색 시작
-        image: baseImg
-    };
-    blocks.push(baseBlock);
-    spawnNewBlock();
-}
-
-// --- [변경] 무지개 색상 + 랜덤 캐릭터 스폰 함수 ---
 function spawnNewBlock() {
     const lastBlock = blocks[blocks.length - 1];
+    const colorIdx = score % rainbowColors.length;
+    const charNum = Math.floor(Math.random() * TOTAL_CHARACTERS) + 1;
+    
+    const img = new Image();
+    img.src = `./assets/char${charNum}.png`;
 
-    // 1. 색상 결정 (무지개 순서)
-    // 현재 점수에 따라 색상 인덱스 결정 (score가 1, 2, 3... 올라갈 때마다 색도 변함)
-    const colorIndex = score % rainbowColors.length;
-    const nextColor = rainbowColors[colorIndex];
-
-    // 2. 캐릭터 결정 (완전 랜덤)
-    // 1 ~ 57 사이의 랜덤 정수 생성
-    const randomCharNum = Math.floor(Math.random() * TOTAL_CHARACTERS) + 1;
-    const nextImage = new Image();
-    nextImage.src = `./assets/char${randomCharNum}.png`;
+    // Start slightly above visible area if we wanted, but here fix logic Y
+    // Spawn Y is fixed relative to last block usually, or fixed at top?
+    // In original code: y: 40.
+    // Let's make it relative to canvas top
+    const spawnY = BLOCK_HEIGHT * 0.5;
 
     currentBlock = {
         x: 0,
-        y: 40,
+        y: spawnY,
         width: lastBlock.width,
         height: BLOCK_HEIGHT,
         speed: blockSpeed,
         direction: 1,
         isFalling: false,
-        color: nextColor,    // 순서대로
-        image: nextImage     // 랜덤하게
+        color: rainbowColors[colorIdx],
+        image: img
     };
+    
+    // Scale speed based on screen width so it's not too fast/slow on different devices
+    // Base speed = 1.0 roughly for 400px width
+    const scaleFactor = canvas.width / 400; // internal canvas width (DPI scaled) is not used for logic coordinates usually if we used ctx.scale
+    // Wait, we used ctx.scale. So logic coordinates are CSS pixels.
+    // Container width is approx 300~400px on mobile.
+    currentBlock.speed = blockSpeed * (canvas.clientWidth / 350); 
 }
 
-function handleInput() {
+function init() {
+    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+    gameState = 'waiting';
+    score = 0;
+    combo = 0;
+    blockSpeed = 1; // Slightly faster base speed for fun
+    fallSpeed = 20;
+    
+    scoreEl.textContent = '0';
+    comboEl.textContent = '';
+    gameOverScreen.classList.add('hidden');
+    gameOverScreen.classList.remove('flex');
+    gameOverNicknamePrompt.classList.add('hidden');
+    
+    blocks = [];
+    
+    // Base Block
+    const logicalWidth = canvas.clientWidth; // CSS pixels
+    const logicalHeight = canvas.clientHeight;
+    
+    const baseWidth = Math.min(logicalWidth * 0.6, 250); 
+    const baseX = (logicalWidth - baseWidth) / 2;
+    const baseY = logicalHeight - BLOCK_HEIGHT;
+
+    const baseImg = new Image();
+    baseImg.src = './assets/char18.png';
+
+    blocks.push({
+        x: baseX,
+        y: baseY,
+        width: baseWidth,
+        height: BLOCK_HEIGHT,
+        color: rainbowColors[6],
+        image: baseImg
+    });
+
+    spawnNewBlock();
+    gameLoop();
+}
+
+function handleInput(e) {
+    if (e && e.type !== 'keydown') {
+        // Prevent default touch actions (zooming, scrolling)
+        // Check if target is not a button
+        if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') {
+            e.preventDefault();
+        }
+    }
+
+    if (!nicknameModal.classList.contains('hidden')) return;
+    if (!gameOverScreen.classList.contains('hidden') && gameState !== 'gameOver') return;
+
     if (gameState === 'waiting') {
         gameState = 'playing';
     } else if (gameState === 'playing') {
         gameState = 'dropping';
         currentBlock.isFalling = true;
     } else if (gameState === 'gameOver') {
+        // Prevent accidental restart immediately after game over
+        // Add a small delay or check e.target
+        if (e && e.target.closest('#gameOverNicknamePrompt')) return;
         init();
     }
 }
@@ -450,112 +535,160 @@ function handleInput() {
 function update() {
     if (gameState !== 'playing' && gameState !== 'dropping') return;
 
+    const logicalHeight = canvas.clientHeight;
+    const logicalWidth = canvas.clientWidth;
+
     if (currentBlock.isFalling) {
         const lastBlock = blocks[blocks.length - 1];
         currentBlock.y += fallSpeed;
+
+        // Check collision (touching the block below)
         if (currentBlock.y + currentBlock.height >= lastBlock.y) {
             currentBlock.y = lastBlock.y - currentBlock.height;
+            
+            // Calculate Overlap
             const overlap = Math.max(0, Math.min(currentBlock.x + currentBlock.width, lastBlock.x + lastBlock.width) - Math.max(currentBlock.x, lastBlock.x));
+            
             if (overlap <= 0) {
-                gameState = 'gameOver';
-                finalScore.textContent = score;
-                saveScore(score); 
-                gameOverScreen.classList.remove('hidden');
-                gameOverScreen.classList.add('flex');
-                if (userNickname && userNickname.startsWith('게이머')) {
-                    gameOverNicknamePrompt.classList.remove('hidden');
-                    nicknameInputGameOver.value = '';
-                    nicknameInputGameOver.classList.remove('border-red-500');
-                    nicknameInputGameOver.placeholder = "닉네임 (10자 이내)";
-                } else {
-                    gameOverNicknamePrompt.classList.add('hidden');
-                }
+                endGame();
                 return;
             }
 
-            const isPerfect = Math.abs(currentBlock.x - lastBlock.x) <= PERFECT_TOLERANCE;
-            let newBlock;
+            // Check Perfect
+            const diff = currentBlock.x - lastBlock.x;
+            const isPerfect = Math.abs(diff) <= PERFECT_TOLERANCE;
 
+            let newBlock;
             if (isPerfect) {
                 combo++;
-                newBlock = { 
-                    ...lastBlock, 
-                    y: currentBlock.y, 
-                    color: currentBlock.color, 
-                    image: currentBlock.image 
+                newBlock = {
+                    ...currentBlock,
+                    x: lastBlock.x, // Snap to below block
+                    width: lastBlock.width,
+                    color: currentBlock.color,
+                    image: currentBlock.image
                 };
-                comboDisplay.textContent = `PERFECT x${combo}!`;
+                comboEl.textContent = `PERFECT x${combo}`;
                 createPopup('PERFECT!', '#5244ef');
+                
+                // Bonus score for combo
+                if (combo > 3) score += 1; 
             } else {
                 combo = 0;
-                comboDisplay.textContent = '';
-                const newX = Math.max(currentBlock.x, lastBlock.x);
+                comboEl.textContent = '';
                 newBlock = {
-                    x: newX,
+                    x: Math.max(currentBlock.x, lastBlock.x),
                     y: currentBlock.y,
                     width: overlap,
                     height: currentBlock.height,
-                    color: currentBlock.color, // 색상 유지
-                    image: currentBlock.image  // 이미지 유지
+                    color: currentBlock.color,
+                    image: currentBlock.image
                 };
             }
+
             blocks.push(newBlock);
             score++;
-            scoreElement.textContent = score;
-            blockSpeed += 0.08;
-            if (newBlock.y < canvas.height * 0.6) {
-                blocks.forEach(b => b.y += BLOCK_HEIGHT);
+            scoreEl.textContent = score;
+
+            // Increase Difficulty
+            blockSpeed += 0.05;
+            
+            // Scroll Down Logic (Camera)
+            // If stack gets too high (near top 40% of screen)
+            const stackTopLimit = logicalHeight * 0.4;
+            if (newBlock.y < stackTopLimit) {
+                const moveDown = stackTopLimit - newBlock.y + BLOCK_HEIGHT;
+                blocks.forEach(b => b.y += moveDown);
             }
+
             spawnNewBlock();
             gameState = 'playing';
         }
-
     } else {
+        // Moving side to side
         currentBlock.x += currentBlock.speed * currentBlock.direction;
-        if (currentBlock.x + currentBlock.width >= canvas.width || currentBlock.x <= 0) {
-            currentBlock.direction *= -1;
-            currentBlock.x = Math.max(0, Math.min(currentBlock.x, canvas.width - currentBlock.width));
+        
+        // Bounce off walls
+        if (currentBlock.x + currentBlock.width >= logicalWidth) {
+            currentBlock.direction = -1;
+            currentBlock.x = logicalWidth - currentBlock.width;
+        } else if (currentBlock.x <= 0) {
+            currentBlock.direction = 1;
+            currentBlock.x = 0;
         }
+    }
+}
+
+function endGame() {
+    gameState = 'gameOver';
+    finalScoreEl.textContent = score;
+    saveScore(score);
+    
+    gameOverScreen.classList.remove('hidden');
+    gameOverScreen.classList.add('flex');
+    
+    if (userNickname && userNickname.startsWith('게이머')) {
+        gameOverNicknamePrompt.classList.remove('hidden');
+        nicknameInputGameOver.value = '';
+        nicknameInputGameOver.classList.remove('border-red-500');
+    } else {
+        gameOverNicknamePrompt.classList.add('hidden');
     }
 }
 
 function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const visibleBlocks = blocks.filter(b => b.y < canvas.height && b.y + b.height > 0);
-    visibleBlocks.forEach(block => {
-        drawBlock(block);
-    });
+    const logicalWidth = canvas.clientWidth;
+    const logicalHeight = canvas.clientHeight;
+    
+    ctx.clearRect(0, 0, logicalWidth, logicalHeight);
+    
+    // Draw only visible blocks
+    const visibleBlocks = blocks.filter(b => b.y - BLOCK_HEIGHT < logicalHeight && b.y + b.height > 0);
+    visibleBlocks.forEach(drawBlock);
+    
     if (gameState === 'playing' || gameState === 'dropping') {
         drawBlock(currentBlock);
     }
 }
+
 function gameLoop() {
     update();
     draw();
-    requestAnimationFrame(gameLoop);
+    animationFrameId = requestAnimationFrame(gameLoop);
 }
-window.addEventListener('resize', resizeCanvas);
+
+// --- Event Bindings ---
+
+// Resize
+window.addEventListener('resize', () => {
+    resizeCanvas();
+    draw(); // Redraw immediately so it doesn't flicker
+});
+
+// Keyboard
 document.body.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
         e.preventDefault();
-        handleInput();
+        handleInput(e);
     }
 });
-document.body.addEventListener('mousedown', (e) => {
-    if (nicknameModal.classList.contains('hidden')) {
-        handleInput();
-    }
-});
-document.body.addEventListener('touchstart', (e) => {
-    if (nicknameModal.classList.contains('hidden')) {
-        e.preventDefault();
-        handleInput();
-    }
-}, { passive: false });
 
+// Mouse/Touch
+// Use 'pointerdown' which covers both mouse and touch generally, 
+// but for max compatibility we separate or use touchstart carefully.
+const gameArea = document.querySelector('.game-container');
+
+// Touchstart is faster than click on mobile
+canvas.addEventListener('touchstart', handleInput, { passive: false });
+canvas.addEventListener('mousedown', handleInput);
+
+// Prevent default scrolling on the game canvas area
+canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+
+// Init
 resizeCanvas();
 init();
-gameLoop();
+
 </script>
 </body>
 </html>
